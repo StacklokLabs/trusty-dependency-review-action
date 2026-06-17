@@ -62,6 +62,26 @@ const PackageURLString = z.string().superRefine((value, context) => {
   }
 })
 
+export const TrustySummarySchema = z.object({
+  malicious: z.boolean().optional(),
+  activity_user: z.number(),
+  activity_repo: z.number(),
+  from: z.string(),
+  activity: z.number(),
+  provenance: z.number(),
+  typosquatting: z.number()
+})
+
+export const TrustySchema = z.object({
+  archived: z.boolean().optional(),
+  deprecated: z.boolean().optional(),
+  score: z.number().optional(),
+  status: z.string().optional(),
+  status_code: z.number().optional(),
+  description: TrustySummarySchema.optional(),
+  updated_at: z.string().optional() // or z.date() if you want to parse the string into a Date object
+})
+
 export const ChangeSchema = z.object({
   change_type: z.enum(['added', 'removed']),
   manifest: z.string(),
@@ -72,6 +92,7 @@ export const ChangeSchema = z.object({
   license: z.string().nullable(),
   source_repository_url: z.string().nullable(),
   scope: z.enum(SCOPES).optional(),
+  trusty: TrustySchema.optional(),
   vulnerabilities: z
     .array(
       z.object({
@@ -83,6 +104,11 @@ export const ChangeSchema = z.object({
     )
     .optional()
     .default([])
+})
+
+export const UpdateSchema = z.object({
+  added: ChangeSchema.optional(), // Add an empty object as an argument
+  removed: ChangeSchema.optional()
 })
 
 export const PullRequestSchema = z.object({
@@ -110,6 +136,13 @@ export const ConfigurationOptionsSchema = z
     retry_on_snapshot_warnings_timeout: z.number().default(120),
     show_openssf_scorecard: z.boolean().optional().default(true),
     warn_on_openssf_scorecard_level: z.number().default(3),
+    trusty_scores: z.boolean().optional().default(false),
+    trusty_retries: z.number().optional().default(3),
+    trusty_show: z.number().optional().default(7),
+    trusty_warn: z.number().optional().default(5),
+    trusty_fail: z.number().optional().default(1),
+    trusty_api: z.string().default('https://gh.trustypkg.dev'),
+    trusty_ui: z.string().default('https://trustypkg.dev'),
     comment_summary_in_pr: z
       .union([
         z.preprocess(
@@ -154,6 +187,7 @@ export const ConfigurationOptionsSchema = z
   })
 
 export const ChangesSchema = z.array(ChangeSchema)
+export const UpdatesSchema = z.array(UpdateSchema)
 export const ComparisonResponseSchema = z.object({
   changes: z.array(ChangeSchema),
   snapshot_warnings: z.string()
@@ -201,9 +235,13 @@ export const ScorecardSchema = z.object({
 
 export type Change = z.infer<typeof ChangeSchema>
 export type Changes = z.infer<typeof ChangesSchema>
+export type Update = z.infer<typeof UpdateSchema>
+export type Updates = z.infer<typeof UpdatesSchema>
 export type ComparisonResponse = z.infer<typeof ComparisonResponseSchema>
 export type ConfigurationOptions = z.infer<typeof ConfigurationOptionsSchema>
 export type Severity = z.infer<typeof SeveritySchema>
 export type Scope = (typeof SCOPES)[number]
 export type Scorecard = z.infer<typeof ScorecardSchema>
 export type ScorecardApi = z.infer<typeof ScorecardApiSchema>
+export type Trusty = z.infer<typeof TrustySchema>
+export type TrustySummary = z.infer<typeof TrustySummarySchema>
